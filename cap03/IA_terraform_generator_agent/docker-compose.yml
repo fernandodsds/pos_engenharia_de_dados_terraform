@@ -1,0 +1,42 @@
+services:
+  # Serviço da sua Aplicação
+  dsa_ai_agent_app:
+    build: .
+    container_name: terraform-dsa-ai-agent-container
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./app:/usr/src/app
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+    restart: unless-stopped
+
+  # Serviço do Ollama (DeepSeek)
+  ollama:
+    image: ollama/ollama
+    container_name: ollama-service
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    entrypoint: /bin/sh
+    command: >
+      -c "ollama serve & 
+      sleep 10; 
+      ollama pull deepseek-r1:8b; 
+      wait"
+    # Descomente as linhas abaixo se você tiver placa de vídeo NVIDIA
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+volumes:
+  ollama_storage:    
